@@ -17,8 +17,8 @@ common_tags = {
 # ==========================================
 # AVAILABILITY ZONES
 # ==========================================
-az1 = "us-east-1a"
-az2 = "us-east-1b"
+availability_zone_1 = "us-east-1a"
+availability_zone_2 = "us-east-1b"
 
 # ==========================================
 # VPC CONFIGURATION
