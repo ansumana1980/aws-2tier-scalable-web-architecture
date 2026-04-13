@@ -1,5 +1,4 @@
-
-## 🔥 Full AWS CLI commands (production-style)
+## 🔥 Full AWS CLI commands
 
 ### 1. Create S3 bucket
 
