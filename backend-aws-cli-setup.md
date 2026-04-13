@@ -71,16 +71,6 @@ aws dynamodb create-table \
 
 ---
 
-## 🧠 Why this is GOOD practice
-
-You are separating concerns:
-
-| Responsibility           | Tool      |
-| ------------------------ | --------- |
-| Backend infra            | AWS CLI   |
-| App infra (VPC, subnets) | Terraform |
-
-👉 This is very common in real environments
 
 ---
 
@@ -90,7 +80,7 @@ Once created:
 
 👉 **DO NOT manage that S3 bucket in your VPC Terraform project**
 
-That’s what caused your earlier error.
+
 
 ---
 
@@ -108,14 +98,7 @@ You can say:
 
 ---
 
-## 🚀 Next step
 
-Now that your backend is correct:
-
-```bash
-terraform init -reconfigure
-terraform plan
-```
 
 ---
 
