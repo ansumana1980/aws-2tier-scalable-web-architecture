@@ -94,11 +94,3 @@ You can say:
 
 > “I provision an S3 bucket with versioning, encryption, and public access blocking using AWS CLI, and configure DynamoDB for state locking. My Terraform projects then use that backend but do not manage it directly.”
 
-🔥 That’s a strong answer.
-
----
-
-
-
----
-
