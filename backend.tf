@@ -13,17 +13,5 @@ terraform {
 }
 
 
-# Life cycle rule to transition old versions to Glacier and expire them after a certain period
-resource "aws_s3_bucket_lifecycle_configuration" "vpc_state" {
-  bucket = "2-tier-vpc-architecture-terraform-state"
-  rule {
-    id     = "cleanup-old-versions"
-    status = "Enabled"
-
-    noncurrent_version_expiration {
-      noncurrent_days = 90
-    }
-  }
-}
 
 

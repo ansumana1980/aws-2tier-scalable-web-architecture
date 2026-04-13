@@ -120,6 +120,3 @@ terraform plan
 
 ---
 
-If you want, next I can:
-👉 Review your **terraform plan output before apply (highly recommended)**
-👉 Or help you add **EC2 + ALB to make this a full 2-tier app architecture**
