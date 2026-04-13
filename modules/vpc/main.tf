@@ -1,13 +1,15 @@
+
 # Create VPC
 resource "aws_vpc" "vpc" {
   cidr_block           = var.vpc_cidr_block
   instance_tenancy     = "default"
-  enable_dns_hostnames = true
-  enable_dns_support   = true
+  enable_dns_hostnames = var.enable_dns_hostnames
+  enable_dns_support   = var.enable_dns_support
 
-  tags = {
+
+  tags = merge(var.common_tags, {
     Name = "${var.project_name}-${var.environment}-vpc"
-  }
+  })
 }
 
 ###############################################################################################################################################################################################
@@ -16,38 +18,35 @@ resource "aws_vpc" "vpc" {
 resource "aws_internet_gateway" "igw" {
   vpc_id = aws_vpc.vpc.id
 
-  tags = {
-    Name = "${var.project_name}-${var.environment}-igw"
-  }
+  tags = merge(var.common_tags, {
+    Name = "${var.project_name}-${var.environment}-vpc"
+  })
 }
 
 ###############################################################################################################################################################################################
-
-# User data to get availability zones in the region
-data "aws_availability_zones" "available_zones" {}
 
 # Create public subnet in availability zone 1
 resource "aws_subnet" "public_subnet_az1" {
   vpc_id                  = aws_vpc.vpc.id
   cidr_block              = var.public_subnet_az1_cidr
-  availability_zone       = data.aws_availability_zones.available_zones.names[0]
-  map_public_ip_on_launch = true
+  availability_zone       = var.availability_zone_1
+  map_public_ip_on_launch = var.map_public_ip_on_launch
 
-  tags = {
+  tags = merge(var.common_tags, {
     Name = "${var.project_name}-${var.environment}-public-subnet-az1"
-  }
+  })
 }
 
 # Create public subnet in availability zone 2
 resource "aws_subnet" "public_subnet_az2" {
   vpc_id                  = aws_vpc.vpc.id
   cidr_block              = var.public_subnet_az2_cidr
-  availability_zone       = data.aws_availability_zones.available_zones.names[1]
-  map_public_ip_on_launch = true
+  availability_zone       = var.availability_zone_2
+  map_public_ip_on_launch = var.map_public_ip_on_launch
 
-  tags = {
+  tags = merge(var.common_tags, {
     Name = "${var.project_name}-${var.environment}-public-subnet-az2"
-  }
+  })
 }
 
 ###############################################################################################################################################################################################
@@ -61,9 +60,9 @@ resource "aws_route_table" "public_rt" {
     gateway_id = aws_internet_gateway.igw.id
   }
 
-  tags = {
+  tags = merge(var.common_tags, {
     Name = "${var.project_name}-${var.environment}-public-rt"
-  }
+  })
 }
 
 # Associate public subnets with the route table
@@ -82,52 +81,24 @@ resource "aws_route_table_association" "public_subnet_az2_assoc" {
 # Create Private subnets in availability zones 1 and 2
 resource "aws_subnet" "private_subnet_az1" {
   vpc_id                  = aws_vpc.vpc.id
-  cidr_block              = var.private_app_subnet_az1_cidr
-  availability_zone       = data.aws_availability_zones.available_zones.names[0]
-  map_public_ip_on_launch = false
+  cidr_block              = var.private_subnet_az1_cidr
+  availability_zone       = var.availability_zone_1
+  map_public_ip_on_launch = var.private_map_public_ip_on_launch
 
-  tags = {
-    Name = "${var.project_name}-${var.environment}-private-app-subnet-az1"
-  }
-
+  tags = merge(var.common_tags, {
+    Name = "${var.project_name}-${var.environment}-private-subnet-az1"
+  })
 }
 
 resource "aws_subnet" "private_subnet_az2" {
   vpc_id                  = aws_vpc.vpc.id
-  cidr_block              = var.private_app_subnet_az2_cidr
-  availability_zone       = data.aws_availability_zones.available_zones.names[1]
-  map_public_ip_on_launch = false
+  cidr_block              = var.private_subnet_az2_cidr
+  availability_zone       = var.availability_zone_2
+  map_public_ip_on_launch = var.private_map_public_ip_on_launch
 
-  tags = {
-    Name = "${var.project_name}-${var.environment}-private-app-subnet-az2"
-  }
-}
-
-###############################################################################################################################################################################################
-
-# Create private data subnet az1
-resource "aws_subnet" "private_data_subnet_az1" {
-  vpc_id                  = aws_vpc.vpc.id
-  cidr_block              = var.private_data_subnet_az1_cidr
-  availability_zone       = data.aws_availability_zones.available_zones.names[0]
-  map_public_ip_on_launch = false
-
-  tags = {
-    Name = "${var.project_name}-${var.environment}-private-data-subnet-az1"
-  }
-
-}
-
-# Create private data subnet az2
-resource "aws_subnet" "private_data_subnet_az2" {
-  vpc_id                  = aws_vpc.vpc.id
-  cidr_block              = var.private_data_subnet_az2_cidr
-  availability_zone       = data.aws_availability_zones.available_zones.names[1]
-  map_public_ip_on_launch = false
-
-  tags = {
-    Name = "${var.project_name}-${var.environment}-private-data-subnet-az2"
-  }
+  tags = merge(var.common_tags, {
+    Name = "${var.project_name}-${var.environment}-private-subnet-az2"
+  })
 }
 
 ###############################################################################################################################################################################################
@@ -136,9 +107,9 @@ resource "aws_subnet" "private_data_subnet_az2" {
 resource "aws_eip" "nat_eip" {
   domain = "vpc"
 
-  tags = {
+  tags = merge(var.common_tags, {
     Name = "${var.project_name}-${var.environment}-nat-eip"
-  }
+  })
 }
 
 # Create NAT Gateway in public subnet az1
@@ -146,9 +117,9 @@ resource "aws_nat_gateway" "nat_gw" {
   allocation_id = aws_eip.nat_eip.id
   subnet_id     = aws_subnet.public_subnet_az1.id
 
-  tags = {
+  tags = merge(var.common_tags, {
     Name = "${var.project_name}-${var.environment}-nat-gw"
-  }
+  })
 }
 
 # Create route table for private subnets and route to NAT Gateway
@@ -160,9 +131,9 @@ resource "aws_route_table" "private_rt" {
     nat_gateway_id = aws_nat_gateway.nat_gw.id
   }
 
-  tags = {
+  tags = merge(var.common_tags, {
     Name = "${var.project_name}-${var.environment}-private-rt"
-  }
+  })
 }
 
 # Associate private subnets with the route table

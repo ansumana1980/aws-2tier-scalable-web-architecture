@@ -30,7 +30,7 @@ The infrastructure is designed using a **modular approach**, where the VPC is de
 ## 📂 Project Structure
 
 ```
-3-Tier-VPC-Architecture/
+2-Tier-VPC-Architecture/
 ├── modules/
 │   └── vpc/
 │       ├── main.tf
@@ -43,11 +43,11 @@ The infrastructure is designed using a **modular approach**, where the VPC is de
 ├── variables.tf
 ├── outputs.tf
 │
-├── terraform.tfvars.example   ✅ 
+├── terraform.tfvars.example   
 │
 ├── README.md
 ├── OVERVIEW.md           
-├── backend-aws-cli-setup.md  ✅ 
+├── backend-aws-cli-setup.md  
 │
 ├── .gitignore
 ├── .terraform.lock.hcl
@@ -69,7 +69,7 @@ The infrastructure is designed using a **modular approach**, where the VPC is de
 
 ```bash
 git clone https://github.com/YOUR_USERNAME/YOUR_REPO.git
-cd Jupiter-website-ecs
+cd 2-Tier-VPC-Architecture
 ```
 
 ### 2. Create your variable file

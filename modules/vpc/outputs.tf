@@ -1,7 +1,3 @@
-output "region" {
-  value = var.region
-}
-
 output "project_name" {
   value = var.project_name
 }
@@ -26,26 +22,18 @@ output "public_subnet_az2_id" {
   value = aws_subnet.public_subnet_az2.id
 }
 
-output "private_app_subnet_az1_id" {
+output "private_subnet_az1_id" {
   value = aws_subnet.private_subnet_az1.id
 }
 
-output "private_app_subnet_az2_id" {
+output "private_subnet_az2_id" {
   value = aws_subnet.private_subnet_az2.id
 }
 
-output "private_data_subnet_az1_id" {
-  value = aws_subnet.private_data_subnet_az1.id
-}
-
-output "private_data_subnet_az2_id" {
-  value = aws_subnet.private_data_subnet_az2.id
-}
-
 output "availability_zone_1" {
-  value = data.aws_availability_zones.available_zones.names[0]
+  value = var.availability_zone_1
 }
 
 output "availability_zone_2" {
-  value = data.aws_availability_zones.available_zones.names[1]
+  value = var.availability_zone_2
 }
