@@ -11,6 +11,6 @@ terraform {
 # Configure the AWS provider with your region
 provider "aws" {
   region = var.region
-  # profile   = "terraform-user"
+  #profile   ="terraform-user"
 
 }

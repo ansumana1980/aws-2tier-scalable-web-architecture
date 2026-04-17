@@ -211,8 +211,8 @@ Internet → ALB → Private Instances
 # 📁 Project Structure
 
 ```text
-.
-├─.
+. 2-Tier-alb-autoscaling-webapp
+├─
 ├── OVERVIEW.md
 ├── README.md
 ├── README1.md
