@@ -1,413 +1,398 @@
-````markdown
-# 2-Tier AWS VPC Architecture with Terraform
-
-This project provisions a **2-tier AWS VPC architecture** using Terraform. It creates a reusable and modular network foundation with **public and private subnets across two Availability Zones**, along with the routing components needed for internet access and secure outbound connectivity.
 
 ---
 
-## Project Structure
+# 🚀 AWS 2-Tier Architecture with ALB, Auto Scaling & Private Web Tier (Terraform)
+
+## 📌 Overview
+
+This project provisions a **production-style 2-tier AWS architecture** using Terraform, following best practices for:
+
+* High availability (multi-AZ)
+* Security (public vs private separation)
+* Scalability (Auto Scaling Group)
+* Maintainability (modular Terraform design)
+
+The architecture separates:
+
+* **Presentation Layer (Public)**
+* **Application Layer (Private)**
+
+---
+
+# 🏗️ Architecture Breakdown
+
+## 🌐 High-Level Flow
+
+```text
+User (Internet)
+      │
+      ▼
+Application Load Balancer (Public Subnets)
+      │
+      ▼
+Target Group
+      │
+      ▼
+Auto Scaling Group (Private Subnets)
+      │
+      ▼
+Apache Web Servers (Private EC2)
+```
+
+---
+
+## 🧱 Components Explained
+
+### 1. **VPC**
+
+* CIDR: `10.0.0.0/16`
+* DNS support & hostnames enabled
+* Fully isolated network environment
+
+---
+
+### 2. **Subnets (Multi-AZ)**
+
+| Type    | AZ         | CIDR        | Purpose          |
+| ------- | ---------- | ----------- | ---------------- |
+| Public  | us-east-1a | 10.0.1.0/24 | ALB + Public EC2 |
+| Public  | us-east-1b | 10.0.2.0/24 | ALB + Public EC2 |
+| Private | us-east-1a | 10.0.3.0/24 | Web servers      |
+| Private | us-east-1b | 10.0.4.0/24 | Web servers      |
+
+---
+
+### 3. **Internet Gateway**
+
+* Enables internet access for public subnets
+
+---
+
+### 4. **NAT Gateway**
+
+* Allows **private instances to access the internet**
+* Required for:
+
+  * `yum install httpd`
+  * OS updates
+  * package downloads
+
+---
+
+### 5. **Route Tables**
+
+#### Public Route Table
+
+```text
+0.0.0.0/0 → Internet Gateway
+```
+
+#### Private Route Table
+
+```text
+0.0.0.0/0 → NAT Gateway
+```
+
+---
+
+### 6. **Application Load Balancer (ALB)**
+
+* Deployed in **public subnets**
+* Internet-facing
+* Distributes traffic across private web servers
+* Health checks ensure only healthy instances receive traffic
+
+---
+
+### 7. **Target Group**
+
+* Target type: `instance`
+* Port: `80`
+* Health check path: `/`
+* Ensures traffic is only sent to healthy instances
+
+---
+
+### 8. **Auto Scaling Group (ASG)**
+
+| Setting      | Value |
+| ------------ | ----- |
+| Min          | 2     |
+| Desired      | 2     |
+| Max          | 4     |
+| Health Check | ELB   |
+
+* Ensures:
+
+  * High availability
+  * Fault tolerance
+  * Scalability
+
+---
+
+### 9. **Launch Template**
+
+Defines:
+
+* AMI (Amazon Linux 2023 via SSM)
+* Instance type
+* Security group
+* User data script
+
+#### 🧾 User Data (Apache install)
 
 ```bash
-2-Tier-VPC-Architecture/
-├── .terraform/
-├── modules/
-│   └── vpc/
+#!/bin/bash
+yum update -y
+yum install -y httpd
+systemctl start httpd
+systemctl enable httpd
+echo "<h1>Deployed via Terraform</h1>" > /var/www/html/index.html
+```
+
+---
+
+### 10. **EC2 Instances**
+
+#### Public EC2 (2 instances)
+
+* Located in public subnets
+* Used for:
+
+  * SSH access
+  * debugging
+  * admin access
+
+#### Private EC2 (Auto Scaling)
+
+* No public IP
+* Behind ALB
+* Hosts Apache web server
+
+---
+
+## 🔐 Security Architecture
+
+### Security Groups
+
+#### ALB SG
+
+* Inbound: HTTP (80) from `0.0.0.0/0`
+* Outbound: All
+
+---
+
+#### Public EC2 SG
+
+* Inbound: SSH (22) from your IP only
+* Outbound: All
+
+---
+
+#### Private Web SG
+
+* Inbound: HTTP (80) **ONLY from ALB SG**
+* Outbound: All
+
+---
+
+## 🧠 Key Security Principle
+
+> Private instances are **never directly exposed to the internet**
+
+All traffic flows:
+
+```text
+Internet → ALB → Private Instances
+```
+
+---
+
+# 📁 Project Structure
+
+```text
+.
+├─.
+├── OVERVIEW.md
+├── README.md
+├── README1.md
+├── backend-setup.md
+├── backend.tf
+├── main.tf
+├── modules
+│   ├── alb
+│   │   ├── main.tf
+│   │   ├── outputs.tf
+│   │   └── variables.tf
+│   ├── autoscaling
+│   │   ├── main.tf
+│   │   ├── outputs.tf
+│   │   └── variables.tf
+│   ├── launch_template
+│   │   ├── main.tf
+│   │   ├── outputs.tf
+│   │   └── variables.tf
+│   ├── public_ec2
+│   │   ├── main.tf
+│   │   ├── outputs.tf
+│   │   └── variables.tf
+│   ├── security_groups
+│   │   ├── main.tf
+│   │   ├── outputs.tf
+│   │   └── variables.tf
+│   └── vpc
 │       ├── main.tf
 │       ├── outputs.tf
 │       └── variables.tf
-├── .gitignore
-├── .terraform.lock.hcl
-├── backend-aws-cli-setup.md
-├── backend.tf
-├── main.tf
 ├── outputs.tf
-├── OVERVIEW.md
 ├── providers.tf
-├── README.md
 ├── terraform.tfvars
 ├── terraform.tfvars.example
 ├── tplan
 └── variables.tf
-````
-
-### Structure explanation
-
-* **modules/vpc/**
-  Contains the reusable VPC module that creates the VPC, subnets, route tables, Internet Gateway, NAT Gateway, and subnet associations.
-
-* **backend.tf**
-  Configures the remote Terraform backend using S3 and DynamoDB.
-
-* **main.tf**
-  Calls the VPC module and passes all required variables from the root module.
-
-* **variables.tf**
-  Declares input variables used by the root module.
-
-* **terraform.tfvars**
-  Stores actual environment-specific values for this deployment.
-
-* **terraform.tfvars.example**
-  Template file showing the expected input format for reuse.
-
-* **outputs.tf**
-  Exposes important resource IDs and values after deployment.
-
-* **providers.tf**
-  Defines the Terraform and AWS provider configuration.
-
-* **OVERVIEW.md / README.md**
-  Project documentation and architecture explanation.
-
----
-
-## What “2-tier” means
-
-This architecture is divided into two layers:
-
-1. **Public tier**
-2. **Private tier**
-
-This design is commonly used because it improves:
-
-* security
-* simplicity
-* scalability
-* high availability
-
----
-
-## 1. The VPC
-
-At the center of the design is the **VPC (Virtual Private Cloud)**.
-
-The VPC is your private network inside AWS. In this project, it:
-
-* has its own CIDR block
-* contains all public and private subnets
-* includes public and private route tables
-* is attached to an Internet Gateway
-
-Think of the VPC as the main network boundary that contains everything else.
-
----
-
-## 2. Availability Zones
-
-This architecture uses two explicit Availability Zones:
-
-* `availability_zone_1`
-* `availability_zone_2`
-
-In your current `terraform.tfvars`, these are set to:
-
-* `us-east-1a`
-* `us-east-1b`
-
-Using two Availability Zones improves:
-
-* resilience
-* fault tolerance
-* high availability
-
-If one Availability Zone has an issue, the other can still continue serving traffic.
-
----
-
-## 3. Public Tier
-
-You created two public subnets:
-
-* `public_subnet_az1`
-* `public_subnet_az2`
-
-These subnets are public because:
-
-* they are associated with the **public route table**
-* the public route table sends `0.0.0.0/0` traffic to the **Internet Gateway**
-* `map_public_ip_on_launch = true`
-
-This means resources launched in these subnets can receive public IP addresses and communicate with the internet.
-
-### Typical resources in the public tier
-
-Public subnets commonly host:
-
-* Application Load Balancers
-* NAT Gateways
-* Bastion hosts
-
-This is your **internet-facing layer**.
-
----
-
-## 4. Internet Gateway
-
-You created an **Internet Gateway** and attached it to the VPC.
-
-The Internet Gateway allows:
-
-* inbound internet traffic to reach public resources
-* outbound internet traffic from public resources
-
-Without it, the public subnets would not truly be public.
-
----
-
-## 5. Public Route Table
-
-You created a route table for the public subnets with a default route:
-
-* destination: `0.0.0.0/0`
-* target: Internet Gateway
-
-That route table is associated with both public subnets.
-
-### Result
-
-Any outbound traffic from public subnet resources is routed to the Internet Gateway, making those subnets internet-accessible.
-
----
-
-## 6. Private Tier
-
-You created two private subnets:
-
-* `private_subnet_az1`
-* `private_subnet_az2`
-
-These subnets are private because:
-
-* `private_map_public_ip_on_launch = false`
-* they do not use the public route table
-* they do not have direct internet-facing access
-
-### Typical resources in the private tier
-
-Private subnets usually host:
-
-* EC2 application servers
-* ECS tasks/services
-* backend APIs
-* internal application components
-
-These workloads are protected from direct internet exposure.
-
----
-
-## 7. NAT Gateway
-
-You created a **NAT Gateway** in one of the public subnets.
-
-The NAT Gateway allows resources in the private subnets to:
-
-* access the internet for outbound connections
-* download updates and packages
-* reach external services when needed
-
-At the same time, it does **not** allow the internet to initiate inbound connections directly to private resources.
-
-This is what makes the private tier secure while still being operational.
-
----
-
-## 8. Private Route Table
-
-You created a private route table with a default route:
-
-* destination: `0.0.0.0/0`
-* target: NAT Gateway
-
-This route table is associated with both private subnets.
-
-### Result
-
-Resources in private subnets can send outbound traffic to the internet through the NAT Gateway, but they remain private and are not directly reachable from the internet.
-
----
-
-## 9. Traffic Flow
-
-### Inbound traffic flow
-
-A typical request path looks like this:
-
-Internet
-→ Internet Gateway
-→ Public subnet resource
-→ Private subnet resource
-
-### Outbound traffic flow
-
-For private resources:
-
-Private subnet
-→ Private route table
-→ NAT Gateway
-→ Internet
-
-This gives you a secure and common cloud networking pattern.
-
----
-
-## 10. Why this design is strong
-
-### Security
-
-* Internet-facing resources are separated from internal resources
-* Private workloads are not directly exposed to the internet
-
-### High availability
-
-* Public and private layers span two Availability Zones
-
-### Scalability
-
-You can extend this design later by adding:
-
-* Application Load Balancer in public subnets
-* EC2 or ECS in private subnets
-* Auto Scaling Groups
-* Security groups for app-specific traffic control
-
-### Reusability
-
-Because this is built as a Terraform module, you can reuse the same architecture across multiple environments by changing only variable values.
-
----
-
-## 11. Terraform Design
-
-This project uses a **modular Terraform structure**.
-
-### Root module responsibilities
-
-The root module is responsible for:
-
-* provider configuration
-* backend configuration
-* passing input variables
-* calling the VPC module
-* exposing outputs
-
-### Child module responsibilities
-
-The child `vpc` module is responsible for creating:
-
-* VPC
-* public subnets
-* private subnets
-* Internet Gateway
-* NAT Gateway
-* route tables
-* route table associations
-
-This design improves:
-
-* code organization
-* reusability
-* maintainability
-
----
-
-## 12. Tagging Strategy
-
-This project uses a **common tagging approach** so all resources are consistently labeled.
-
-Example common tags:
-
-```hcl
-common_tags = {
-  Project      = "ansu-2-tier-vpc"
-  Environment  = "dev"
-  ManagedBy    = "Terraform"
-  Owner        = "Ansu"
-  Architecture = "2-tier"
-}
-```
-
-Each resource also gets a unique `Name` tag, such as:
-
-```hcl
-Name = "ansu-2-tier-vpc-dev-private-subnet-az2"
-```
-
-This supports:
-
-* governance
-* cost tracking
-* ownership
-* easier AWS console navigation
-
----
-
-## 13. Example Input Values
-
-Example values used in `terraform.tfvars`:
-
-```hcl
-region       = "us-east-1"
-project_name = "ansu-2-tier-vpc"
-environment  = "dev"
-
-common_tags = {
-  Project      = "ansu-2-tier-vpc"
-  Environment  = "dev"
-  ManagedBy    = "Terraform"
-  Owner        = "Ansu"
-  Architecture = "2-tier"
-}
-
-vpc_cidr_block          = "10.0.0.0/16"
-public_subnet_az1_cidr  = "10.0.1.0/24"
-public_subnet_az2_cidr  = "10.0.2.0/24"
-private_subnet_az1_cidr = "10.0.3.0/24"
-private_subnet_az2_cidr = "10.0.4.0/24"
-
-az1 = "us-east-1a"
-az2 = "us-east-1b"
-
-enable_dns_support              = true
-enable_dns_hostnames            = true
-map_public_ip_on_launch         = true
-private_map_public_ip_on_launch = false
 ```
 
 ---
 
-## 14. Commands
+# 🔄 Terraform Design Pattern
 
-Initialize Terraform:
+### Modular Approach
+
+Each component is isolated:
+
+| Module          | Responsibility |
+| --------------- | -------------- |
+| vpc             | Networking     |
+| security_groups | Access control |
+| alb             | Load balancing |
+| launch_template | EC2 config     |
+| autoscaling     | Scaling        |
+| public_ec2      | Admin access   |
+
+---
+
+# 🚀 Deployment Guide
+
+## 1. Initialize
 
 ```bash
-terraform init -reconfigure
+terraform init
 ```
 
-Format files:
+---
 
-```bash
-terraform fmt -recursive
-```
-
-Validate configuration:
+## 2. Validate
 
 ```bash
 terraform validate
 ```
 
-Preview infrastructure changes:
+---
+
+## 3. Plan
 
 ```bash
-terraform plan
+terraform plan -out=tplan
 ```
 
-Apply infrastructure:
+---
+
+## 4. Apply
 
 ```bash
-terraform apply
+terraform apply tplan
 ```
 
-Destroy infrastructure:
+---
+
+# 📊 Outputs
+
+After deployment:
+
+```bash
+terraform output
+```
+
+Key outputs:
+
+* `alb_dns_name`
+* `public_ec2_public_ips`
+* `asg_name`
+
+---
+
+# 🧪 Testing & Validation
+
+## 1. Test Application
+
+```bash
+terraform output alb_dns_name
+```
+
+Open in browser → Apache page should load
+
+---
+
+## 2. SSH Access
+
+```bash
+ssh -i <key.pem> ec2-user@<public_ip>
+```
+
+---
+
+## 3. Verify Target Health
+
+AWS Console:
+
+* EC2 → Target Groups → Targets
+* Should show **healthy**
+
+---
+
+## 4. Validate Scaling
+
+* Terminate one instance
+* ASG should automatically replace it
+
+---
+
+# ⚠️ Troubleshooting
+
+### ❌ ALB returns 503
+
+* Apache not installed
+* Target group unhealthy
+* Security group misconfigured
+
+---
+
+### ❌ SSH fails
+
+* Wrong key
+* IP not whitelisted
+* Instance not public
+
+---
+
+### ❌ Web app not loading
+
+* NAT Gateway missing or misconfigured
+* Route table issue
+
+---
+
+# 🔥 Real-World Design Benefits
+
+✔ Highly Available (multi-AZ)
+✔ Secure (private backend)
+✔ Scalable (Auto Scaling)
+✔ Maintainable (modular Terraform)
+✔ Cloud-native architecture
+
+---
+
+# 🧹 Cleanup
 
 ```bash
 terraform destroy
@@ -415,24 +400,35 @@ terraform destroy
 
 ---
 
-## 15. Interview Explanation
+# 👤 Author
 
-You can describe this project like this:
-
-> I built a modular 2-tier VPC architecture in AWS using Terraform. The design includes public subnets for internet-facing resources and private subnets for internal application workloads, distributed across two explicitly defined Availability Zones for high availability. I configured an Internet Gateway for public access, a NAT Gateway for secure outbound internet access from private subnets, route tables for traffic flow, and a reusable Terraform module structure with centralized tagging for consistency across environments.
+**Ansu**
+AWS • Terraform • Cloud Architecture
 
 ---
 
-## 16. Future Enhancements
+# ⭐ Final Notes
 
-This project can be extended by adding:
+This project demonstrates:
 
-* Application Load Balancer (ALB)
-* EC2 instances in private subnets
-* Auto Scaling Group
-* Security groups module
-* Monitoring and logging
-* Expansion into a full 3-tier architecture
+* Real-world AWS architecture patterns
+* Terraform modular design
+* Secure and scalable infrastructure
 
-```
+---
 
+# 🚀 Want to take it further?
+
+Next enhancements you could add:
+
+* HTTPS (ACM + ALB listener 443)
+* Route53 domain
+* WAF (Web Application Firewall)
+* CI/CD pipeline (GitHub Actions)
+* CloudWatch monitoring & alarms
+
+---
+
+If you want, I can next:
+👉 generate a **professional AWS architecture diagram (PNG with icons)**
+👉 or help you **turn this into a GitHub portfolio standout project**

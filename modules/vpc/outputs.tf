@@ -37,3 +37,19 @@ output "availability_zone_1" {
 output "availability_zone_2" {
   value = var.availability_zone_2
 }
+
+output "public_subnet_ids" {
+  description = "List of public subnet IDs"
+  value = [
+    aws_subnet.public_subnet_az1.id,
+    aws_subnet.public_subnet_az2.id
+  ]
+}
+
+output "private_subnet_ids" {
+  description = "List of private subnet IDs"
+  value = [
+    aws_subnet.private_subnet_az1.id,
+    aws_subnet.private_subnet_az2.id
+  ]
+}

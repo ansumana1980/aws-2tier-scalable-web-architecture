@@ -1,11 +1,11 @@
-# ==========================================
-# GLOBAL CONFIGURATION
-# ==========================================
+#################################################################
+# 🌍 Environment
+#################################################################
+
 region       = "us-east-1"
 project_name = "your-project-name"
 environment  = "dev"
 
-# Common tags applied to all resources
 common_tags = {
   Project      = "your-project-name"
   Environment  = "dev"
@@ -14,29 +14,49 @@ common_tags = {
   Architecture = "2-tier"
 }
 
-# ==========================================
-# AVAILABILITY ZONES
-# ==========================================
+#################################################################
+# 🌐 VPC
+#################################################################
+
+vpc_cidr_block = "10.0.0.0/16"
+
+public_subnet_az1_cidr  = "10.0.1.0/24"
+public_subnet_az2_cidr  = "10.0.2.0/24"
+private_subnet_az1_cidr = "10.0.3.0/24"
+private_subnet_az2_cidr = "10.0.4.0/24"
+
 availability_zone_1 = "us-east-1a"
 availability_zone_2 = "us-east-1b"
 
-# ==========================================
-# VPC CONFIGURATION
-# ==========================================
-vpc_cidr_block       = "10.0.0.0/16"
 enable_dns_support   = true
 enable_dns_hostnames = true
 
-# ==========================================
-# PUBLIC SUBNETS (WEB / ALB TIER)
-# ==========================================
-public_subnet_az1_cidr  = "10.0.1.0/24"
-public_subnet_az2_cidr  = "10.0.2.0/24"
-map_public_ip_on_launch = true
-
-# ==========================================
-# PRIVATE SUBNETS (APP TIER)
-# ==========================================
-private_subnet_az1_cidr         = "10.0.3.0/24"
-private_subnet_az2_cidr         = "10.0.4.0/24"
+map_public_ip_on_launch         = true
 private_map_public_ip_on_launch = false
+
+#################################################################
+# 🔐 Security
+#################################################################
+
+# Replace with your public IP in CIDR format (e.g., 1.2.3.4/32)
+allowed_ssh_cidr = "YOUR_IP/32"
+
+#################################################################
+# 🚀 EC2 / Launch Template
+#################################################################
+
+# Instance types for EC2
+instance_type_public  = "t2.micro"
+instance_type_private = "t2.micro"
+
+# Must match an existing EC2 Key Pair in your AWS account
+public_key_name = "your-keypair-name"
+
+#################################################################
+# 📈 Auto Scaling
+#################################################################
+
+# Auto Scaling configuration
+min_size         = 2
+desired_capacity = 2
+max_size         = 4
