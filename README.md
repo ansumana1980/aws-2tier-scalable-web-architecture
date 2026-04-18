@@ -211,45 +211,48 @@ Internet → ALB → Private Instances
 # 📁 Project Structure
 
 ```text
-. 2-Tier-alb-autoscaling-webapp
-├─
+aws-2tier-scalable-web-architecture/
 ├── OVERVIEW.md
 ├── README.md
-├── README1.md
 ├── backend-setup.md
 ├── backend.tf
 ├── main.tf
-├── modules
-│   ├── alb
+├── outputs.tf
+├── providers.tf
+├── variables.tf
+├── terraform.tfvars.example
+├── .gitignore
+│
+├── modules/
+│   ├── vpc/
 │   │   ├── main.tf
 │   │   ├── outputs.tf
 │   │   └── variables.tf
-│   ├── autoscaling
+│   │
+│   ├── security_groups/
 │   │   ├── main.tf
 │   │   ├── outputs.tf
 │   │   └── variables.tf
-│   ├── launch_template
+│   │
+│   ├── alb/
 │   │   ├── main.tf
 │   │   ├── outputs.tf
 │   │   └── variables.tf
-│   ├── public_ec2
+│   │
+│   ├── launch_template/
 │   │   ├── main.tf
 │   │   ├── outputs.tf
 │   │   └── variables.tf
-│   ├── security_groups
+│   │
+│   ├── autoscaling/
 │   │   ├── main.tf
 │   │   ├── outputs.tf
 │   │   └── variables.tf
-│   └── vpc
+│   │
+│   └── public_ec2/
 │       ├── main.tf
 │       ├── outputs.tf
 │       └── variables.tf
-├── outputs.tf
-├── providers.tf
-├── terraform.tfvars
-├── terraform.tfvars.example
-├── tplan
-└── variables.tf
 ```
 
 ---
@@ -400,13 +403,6 @@ terraform destroy
 
 ---
 
-# 👤 Author
-
-**Ansu**
-AWS • Terraform • Cloud Architecture
-
----
-
 # ⭐ Final Notes
 
 This project demonstrates:
@@ -415,20 +411,15 @@ This project demonstrates:
 * Terraform modular design
 * Secure and scalable infrastructure
 
----
-
-# 🚀 Want to take it further?
-
-Next enhancements you could add:
-
-* HTTPS (ACM + ALB listener 443)
-* Route53 domain
-* WAF (Web Application Firewall)
-* CI/CD pipeline (GitHub Actions)
-* CloudWatch monitoring & alarms
 
 ---
 
-If you want, I can next:
-👉 generate a **professional AWS architecture diagram (PNG with icons)**
-👉 or help you **turn this into a GitHub portfolio standout project**
+# 💼 5. HOW TO TALK ABOUT THIS IN INTERVIEWS
+
+Use this:
+
+> “IDesigned and deployed a highly available 2-tier AWS architecture using Terraform, 
+featuring Application Load Balancer, Auto Scaling Groups, and private EC2 web servers 
+across multiple availability zones with secure network segmentation."
+
+---
